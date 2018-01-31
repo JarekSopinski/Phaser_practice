@@ -1,18 +1,24 @@
 // tools - normal items with randomized textures, they give 1 to 5 points (random value)
 // diamonds - exclusive items, are more rare than tools but always give 100 points
+// obstacles - collision means game over
 
 const game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create: create, update: update });
 
 let platforms;
 let player;
 let cursors;
+
 let diamonds;
 let diamond;
 let tools;
 let tool;
+let obstacles;
+let obstacle;
+
 let gameScore = 0;
 let scoreText;
 let instructionText;
+let gameOver = false;
 
 
 function preload() {
@@ -21,6 +27,7 @@ function preload() {
     game.load.image('ground', '../assets/platform.png');
     game.load.spritesheet('dude', '../assets/dude.png', 32, 48); // spritesheet, nie image!!!
     game.load.image('diamond', '../assets/diamond.png');
+    game.load.image('crate', '../assets/crate.PNG');
 
     //tools:
 
@@ -63,12 +70,17 @@ function create() {
     tools.enableBody = true;
     game.time.events.loop(Phaser.Timer.SECOND, spawnTools, this);
 
+    obstacles = game.add.group();
+    obstacles.enableBody = true;
+    game.time.events.loop(Phaser.Timer.SECOND, spawnObstacles, this);
+
 
     cursors = game.input.keyboard.createCursorKeys();
+
     scoreText = game.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
     instructionText = game.add.text(500, 16, 'Use arrows to move and jump', { fontSize: '16px', fill: '#000' });
     instructionText = game.add.text(350, 32, 'Tools give you 1-10 points, diamonds give you 100 points', { fontSize: '16px', fill: '#000' });
-
+    instructionText = game.add.text(450, 48, 'Watch out for crates coming your way!', { fontSize: '16px', fill: '#000' })
 };
 
 function update() {
@@ -77,6 +89,7 @@ function update() {
     game.physics.arcade.collide(player, platforms);
     game.physics.arcade.overlap(player, diamonds, collectDiamonds, null, this);
     game.physics.arcade.overlap(player, tools, collectTools, null, this);
+    game.physics.arcade.overlap(player, obstacles, obstacleCollision, null, this);
 
 
     player.body.velocity.x = 0;
@@ -104,6 +117,14 @@ function update() {
         player.body.velocity.y = -450;
 
     };
+
+    if (gameOver) {
+
+        game.add.text(300, 300, 'You lose!', { fontSize: '50px', fill: '#000' });
+
+        // some other game over conditions, like displaying high scores or restart button can be added here
+
+    }
 
 
 };
@@ -161,3 +182,24 @@ function collectTools(player, tool) {
     scoreText.text = 'Score: ' + gameScore;
 
 };
+
+function spawnObstacles() {
+
+
+    const randomNum = Math.random() * 10;
+    if (randomNum <= 3) {
+
+        obstacle = obstacles.create(800, game.world.height - 100, 'crate');
+        obstacle.scale.setTo(0.2,0.2);
+        obstacle.body.velocity.x = -400;
+
+    };
+
+}
+
+function obstacleCollision(player, obstacle) {
+
+    player.kill();
+    gameOver = true;
+
+}
